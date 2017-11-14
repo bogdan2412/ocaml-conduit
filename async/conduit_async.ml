@@ -111,7 +111,7 @@ type server = [
 
 let serve
       ?max_connections ?backlog
-      ?buffer_age_limit ?on_handler_error mode where_to_listen handle_request =
+      ?buffer_age_limit ~on_handler_error mode where_to_listen handle_request =
   let handle_client handle_request sock rd wr =
     match mode with
     | `TCP -> handle_request sock rd wr
@@ -139,5 +139,5 @@ let serve
               Deferred.all_unit [ Reader.close rd ; Writer.close wr ])
     in
     Tcp.Server.create ?max_connections ?backlog
-      ?buffer_age_limit ?on_handler_error
+      ?buffer_age_limit ~on_handler_error
       where_to_listen (handle_client handle_request)

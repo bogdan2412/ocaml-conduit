@@ -62,7 +62,7 @@ val serve :
   ?max_connections:int ->
   ?backlog:int ->
   ?buffer_age_limit:Writer.buffer_age_limit ->
-  ?on_handler_error:[ `Call of ([< Socket.Address.t ] as 'a) -> exn -> unit
+  on_handler_error:[ `Call of ([< Socket.Address.t ] as 'a) -> exn -> unit
     | `Ignore
     | `Raise ] ->
     server ->
