@@ -31,25 +31,29 @@ type addr = [
   | `Unix_domain_socket of string
 ] [@@deriving sexp]
 
+let tcp_of_host_and_port host port =
+  Tcp.Where_to_connect.of_host_and_port
+    (Host_and_port.create ~host ~port)
+
 let connect ?interrupt dst =
   match dst with
   | `TCP (ip, port) -> begin
-      Tcp.connect ?interrupt (Tcp.to_host_and_port (Ipaddr.to_string ip) port)
+      Tcp.connect ?interrupt (tcp_of_host_and_port (Ipaddr.to_string ip) port)
       >>= fun (_, rd, wr) -> return (rd,wr)
   end
   | `OpenSSL (host, ip, port) -> begin
-      Tcp.connect ?interrupt (Tcp.to_host_and_port (Ipaddr.to_string ip) port)
+      Tcp.connect ?interrupt (tcp_of_host_and_port (Ipaddr.to_string ip) port)
       >>= fun (_, rd, wr) ->
       let config = Conduit_async_ssl.Ssl_config.configure () in
       Conduit_async_ssl.ssl_connect config rd wr
   end
   | `OpenSSL_with_config (host, ip, port, config) -> begin
-      Tcp.connect ?interrupt (Tcp.to_host_and_port (Ipaddr.to_string ip) port)
+      Tcp.connect ?interrupt (tcp_of_host_and_port (Ipaddr.to_string ip) port)
       >>= fun (_, rd, wr) ->
       Conduit_async_ssl.ssl_connect config rd wr
   end
   | `Unix_domain_socket file -> begin
-      Tcp.connect ?interrupt (Tcp.to_file file)
+      Tcp.connect ?interrupt (Tcp.Where_to_connect.of_file file)
       >>= fun (_, rd, wr) ->
       return (rd,wr)
   end
@@ -58,13 +62,13 @@ let with_connection ?interrupt dst f =
   match dst with
   | `TCP (ip, port) -> begin
       Tcp.with_connection ?interrupt
-        (Tcp.to_host_and_port (Ipaddr.to_string ip) port)
+        (tcp_of_host_and_port (Ipaddr.to_string ip) port)
         (fun _ rd wr -> f rd wr)
     end
   | `OpenSSL (host, ip, port) -> begin
     let config = Conduit_async_ssl.Ssl_config.configure () in
     Tcp.with_connection ?interrupt
-    (Tcp.to_host_and_port (Ipaddr.to_string ip) port) begin fun _ rd wr ->
+    (tcp_of_host_and_port (Ipaddr.to_string ip) port) begin fun _ rd wr ->
     Conduit_async_ssl.ssl_connect config rd wr >>= fun (rd, wr) ->
     Monitor.protect (fun () -> f rd wr) ~finally:begin fun () ->
       Deferred.all_unit [ Reader.close rd ; Writer.close wr ]
@@ -73,7 +77,7 @@ let with_connection ?interrupt dst f =
   end
   | `OpenSSL_with_config (host, ip, port, config) -> begin
     Tcp.with_connection ?interrupt
-    (Tcp.to_host_and_port (Ipaddr.to_string ip) port) begin fun _ rd wr ->
+    (tcp_of_host_and_port (Ipaddr.to_string ip) port) begin fun _ rd wr ->
      Conduit_async_ssl.ssl_connect config rd wr >>= fun (rd, wr) ->
      Monitor.protect (fun () -> f rd wr) ~finally:begin fun () ->
        Deferred.all_unit [ Reader.close rd ; Writer.close wr ]
@@ -81,7 +85,7 @@ let with_connection ?interrupt dst f =
     end
   end
   | `Unix_domain_socket file -> begin
-    Tcp.with_connection ?interrupt (Tcp.to_file file)
+    Tcp.with_connection ?interrupt (Tcp.Where_to_connect.of_file file)
       (fun _ rd wr -> f rd wr)
   end
 
