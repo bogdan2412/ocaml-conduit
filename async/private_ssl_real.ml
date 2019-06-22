@@ -58,7 +58,7 @@ module V1 = struct
         name : string option;
         ca_file : string option;
         ca_path : string option;
-        session : Ssl.Session.t option sexp_opaque;
+        session : (Ssl.Session.t[@sexp.opaque]) option;
         verify : (Ssl.Connection.t -> bool Deferred.t) option;
       } [@@deriving sexp]
 
@@ -124,9 +124,9 @@ module V1 = struct
         reader_writer_of_pipes app_rd app_wr >>| fun (app_reader, app_writer) ->
         (app_reader, app_writer)
 
-    type session = Ssl.Session.t sexp_opaque [@@deriving sexp]
+    type session = Ssl.Session.t [@sexp.opaque] [@@deriving sexp]
     type version = Ssl.Version.t  [@@deriving sexp]
-    type connection = Ssl.Connection.t sexp_opaque [@@deriving sexp]
+    type connection = Ssl.Connection.t [@sexp.opaque] [@@deriving sexp]
   end
 end
 
@@ -147,8 +147,8 @@ module V2 = struct
         ca_path : string option;
         crt_file : string option;
         key_file : string option;
-        session : Ssl.Session.t option sexp_opaque;
-        verify_modes:Verify_mode.t sexp_opaque list option;
+        session : (Ssl.Session.t[@sexp.opaque]) option;
+        verify_modes : (Verify_mode.t[@sexp.opaque]) list option;
         verify : (Ssl.Connection.t -> bool Deferred.t) option;
       } [@@deriving sexp_of]
 
@@ -239,7 +239,7 @@ module V2 = struct
         (app_reader, app_writer)
 
     type verify_mode = Ssl.Verify_mode.t [@@deriving sexp_of]
-    type session = Ssl.Session.t sexp_opaque [@@deriving sexp_of]
+    type session = Ssl.Session.t [@sexp.opaque] [@@deriving sexp_of]
     type version = Ssl.Version.t [@@deriving sexp]
     type connection = Ssl.Connection.t [@@deriving sexp_of]
     type opt = Ssl.Opt.t [@@deriving sexp]
